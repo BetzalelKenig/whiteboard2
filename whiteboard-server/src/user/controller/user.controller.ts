@@ -8,18 +8,29 @@ import {
   Put,
 } from '@nestjs/common';
 import { UserService } from '../service/user.service';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { User } from '../models/user.interface';
+import { map, catchError } from 'rxjs/operators';
 
 @Controller('users')
 export class UserController {
   constructor(private userService: UserService) {}
 
   @Post()
-  create(@Body() user: User): Observable<User> {
-    console.log(user, 'controller create');
+  create(@Body() user: User): Observable<User | Object> {
+    return this.userService.create(user).pipe(
+      map((user: User) => user),
+      catchError(err => of({ error: err.message })),
+    );
+  }
 
-    return this.userService.create(user);
+  @Post('login')
+  login(@Body() user: User): Observable<Object> {
+    return this.userService.login(user).pipe(
+      map((jwt: string) => {
+        return { access_token: jwt };
+      }),
+    );
   }
 
   @Get(':id')
